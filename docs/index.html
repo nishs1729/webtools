@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Webtools</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/css/base.css">
+  <script src="assets/js/tools.js"></script>
+  <script src="assets/js/site.js"></script>
+  <style>
+    .intro {
+      margin-bottom: 28px;
+    }
+
+    .intro p {
+      margin: 0;
+    }
+
+    .tool-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 14px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .tool-card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      height: 100%;
+      padding: 18px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      color: var(--text);
+      text-decoration: none;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    }
+
+    a.tool-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-hover);
+      border-color: var(--accent);
+    }
+
+    .tool-card__icon {
+      display: grid;
+      place-items: center;
+      width: 40px;
+      height: 40px;
+      margin-bottom: 6px;
+      border-radius: 10px;
+      background: var(--surface-2);
+      color: var(--accent);
+    }
+
+    .tool-card__name {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .tool-card__desc {
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .tool-card--soon {
+      box-shadow: none;
+      background: transparent;
+      border-style: dashed;
+    }
+
+    .tool-card--soon .tool-card__icon {
+      color: var(--text-muted);
+    }
+
+    .tool-card--soon .tool-card__name {
+      color: var(--text-muted);
+    }
+
+    .badge {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: var(--surface-2);
+      color: var(--text-muted);
+      font-size: 0.72rem;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  <site-header></site-header>
+
+  <main>
+    <section class="intro">
+      <h1>Tools</h1>
+      <p class="muted">Small, single-purpose utilities that run entirely in the browser.</p>
+    </section>
+
+    <ul class="tool-grid" id="tool-grid"></ul>
+  </main>
+
+  <site-footer></site-footer>
+
+  <script>
+    const grid = document.getElementById("tool-grid");
+
+    // Live tools first, keeping registry order within each group.
+    const tools = [...TOOLS].sort((a, b) => (a.status === "live" ? 0 : 1) - (b.status === "live" ? 0 : 1));
+
+    grid.innerHTML = tools
+      .map((tool) => {
+        const live = tool.status === "live";
+        const tag = live ? "a" : "div";
+        const attrs = live ? `href="${Site.toolUrl(tool.slug)}"` : 'aria-disabled="true"';
+        return `
+          <li>
+            <${tag} class="tool-card${live ? "" : " tool-card--soon"}" ${attrs}>
+              <span class="tool-card__icon">${Site.svg(tool.icon)}</span>
+              <h2 class="tool-card__name">${tool.name}</h2>
+              <p class="tool-card__desc">${tool.desc}</p>
+              ${live ? "" : '<span class="badge">Soon</span>'}
+            </${tag}>
+          </li>`;
+      })
+      .join("");
+  </script>
+</body>
+</html>
