@@ -210,14 +210,6 @@ site-footer {
   gap: 12px;
 }
 
-.site-footer__inner a {
-  color: inherit;
-}
-
-.site-footer__inner a:hover {
-  color: var(--text);
-}
-
 /* ---------- Controls ---------- */
 
 button,

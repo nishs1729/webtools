@@ -8,7 +8,6 @@
  * Then in <body>:  <site-header tool="slug"></site-header> … <site-footer></site-footer>
  */
 (function () {
-  const REPO_URL = "https://github.com/nishs1729/webtools";
   const THEME_KEY = "webtools-theme";
 
   // Site root, derived from this script's own URL (…/assets/js/site.js → …/),
@@ -99,7 +98,6 @@
       this.innerHTML = `
         <div class="site-footer__inner">
           <span>Small tools, made for myself.</span>
-          <a href="${REPO_URL}" target="_blank" rel="noopener">Source</a>
         </div>`;
     }
   }
