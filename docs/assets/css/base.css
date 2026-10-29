@@ -128,6 +128,15 @@ svg {
   color: var(--text-muted);
 }
 
+/* Page title + one-line description at the top of <main>. */
+.intro {
+  margin-bottom: 28px;
+}
+
+.intro p {
+  margin: 0;
+}
+
 /* ---------- Header ---------- */
 
 site-header {
@@ -251,6 +260,12 @@ textarea {
   color: var(--danger);
 }
 
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: none;
+}
+
 .icon-btn {
   display: inline-grid;
   place-items: center;
@@ -283,6 +298,11 @@ textarea {
 .textarea:focus {
   outline: none;
   border-color: var(--accent);
+}
+
+input[type="range"] {
+  accent-color: var(--accent);
+  cursor: pointer;
 }
 
 :focus-visible {

@@ -10,13 +10,6 @@
  */
 window.TOOLS = [
   {
-    slug: "timer",
-    name: "Interval Timer",
-    desc: "Work/rest intervals for workouts, with saved presets.",
-    icon: '<circle cx="12" cy="13" r="8"/><path d="M12 13V9M10 2h4M12 2v3"/>',
-    status: "soon",
-  },
-  {
     slug: "pomodoro",
     name: "Pomodoro",
     desc: "Focus and break cycles to keep work moving.",
@@ -31,25 +24,11 @@ window.TOOLS = [
     status: "soon",
   },
   {
-    slug: "ocr",
-    name: "Image to Text",
-    desc: "Extract text from images, entirely in the browser.",
-    icon: '<path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M8 9h8M8 12h8M8 15h5"/>',
-    status: "soon",
-  },
-  {
-    slug: "timezone",
-    name: "Time Zones",
-    desc: "Convert times across zones at a glance.",
-    icon: '<circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18"/>',
-    status: "soon",
-  },
-  {
     slug: "noisee",
     name: "Noisee",
     desc: "Mix ambient sounds — rain, sea, birds, bonfire.",
     icon: '<path d="M2 12h1M6 8v8M10 4v16M14 9v6M18 6v12M22 11v2"/>',
-    status: "soon",
+    status: "live",
   },
   {
     slug: "scribble",

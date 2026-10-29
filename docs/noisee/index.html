@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Noisee · Webtools</title>
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="noisee.css">
+  <script src="../assets/js/tools.js"></script>
+  <script src="../assets/js/site.js"></script>
+</head>
+<body>
+  <site-header tool="noisee"></site-header>
+
+  <main>
+    <section class="intro">
+      <h1>Noisee</h1>
+      <p class="muted">Mix ambient sounds. Tap a sound to turn it on or off.</p>
+    </section>
+
+    <div class="card mixer">
+      <button class="btn btn--primary" id="play" type="button"></button>
+      <label class="mixer__volume" title="Master volume">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5zM15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+        <input id="master" type="range" min="0" max="1" step="0.01" aria-label="Master volume">
+      </label>
+      <select class="select" id="preset" aria-label="Preset">
+        <option value="">Presets…</option>
+      </select>
+    </div>
+
+    <p class="noisee-error" id="error" hidden>
+      Couldn't load the sounds. If you opened this page as a file, serve the folder instead:
+      <code>python3 -m http.server -d docs</code>
+    </p>
+
+    <ul class="sounds" id="sounds"></ul>
+  </main>
+
+  <site-footer></site-footer>
+
+  <script src="noisee.js"></script>
+</body>
+</html>
