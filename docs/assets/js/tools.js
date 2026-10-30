@@ -21,7 +21,7 @@ window.TOOLS = [
     name: "QR Code",
     desc: "Generate QR codes from text or links.",
     icon: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM21 14v.01M17 21h4v-4M14 21v.01"/>',
-    status: "soon",
+    status: "live",
   },
   {
     slug: "noisee",

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QR Code · Webtools</title>
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="qr.css">
+  <script src="../assets/js/tools.js"></script>
+  <script src="../assets/js/site.js"></script>
+</head>
+<body>
+  <site-header tool="qr"></site-header>
+
+  <main>
+    <section class="intro">
+      <h1>QR Code</h1>
+      <p class="muted">Make a QR code from text or a link, or scan one with your camera or from an image.</p>
+    </section>
+
+    <div class="qr">
+      <!-- ---------- Generate ---------- -->
+      <section class="card qr__panel" aria-labelledby="gen-title">
+        <h2 id="gen-title">Create</h2>
+
+        <textarea class="textarea qr__text" id="text" rows="3" placeholder="Text or link" aria-label="Text to encode"></textarea>
+
+        <div class="qr__preview" id="preview">
+          <p class="muted">Your QR code will appear here.</p>
+        </div>
+
+        <div class="qr__actions">
+          <button class="btn btn--primary" id="download-png" type="button" disabled>Download PNG</button>
+          <button class="btn" id="download-svg" type="button" disabled>Download SVG</button>
+          <button class="btn" id="copy-image" type="button" disabled>Copy image</button>
+        </div>
+
+        <details class="qr__options">
+          <summary>Customise</summary>
+          <div class="qr__fields" id="options">
+            <label>Error correction
+              <select class="select" name="level">
+                <option value="L">Low (7%)</option>
+                <option value="M">Medium (15%)</option>
+                <option value="Q">Quartile (25%)</option>
+                <option value="H">High (30%)</option>
+              </select>
+            </label>
+            <label>Size (px)
+              <input class="input" type="number" name="size" min="128" max="2048" step="32">
+            </label>
+            <label>Colour
+              <input type="color" name="fg">
+            </label>
+            <label>Background
+              <input type="color" name="bg">
+            </label>
+            <label>Margin (px)
+              <input class="input" type="number" name="margin" min="0" max="200" step="4">
+            </label>
+            <label>Dot size <output name="dotScaleOut"></output>
+              <input type="range" name="dotScale" min="0.3" max="1" step="0.05">
+            </label>
+            <label class="qr__wide">Title above the code
+              <input class="input" type="text" name="title" placeholder="Optional">
+            </label>
+          </div>
+
+          <div class="qr__images">
+            <div class="qr__image" data-image="logo">
+              <span>Logo in the middle</span>
+              <label class="btn">Choose image<input type="file" accept="image/*" hidden></label>
+              <button class="btn btn--danger" type="button" data-remove hidden>Remove</button>
+            </div>
+            <label class="qr__logo-scale" id="logo-scale" hidden>Logo size <output name="logoScaleOut"></output>
+              <input type="range" name="logoScale" min="0.1" max="0.4" step="0.02">
+            </label>
+            <div class="qr__image" data-image="background">
+              <span>Background image</span>
+              <label class="btn">Choose image<input type="file" accept="image/*" hidden></label>
+              <button class="btn btn--danger" type="button" data-remove hidden>Remove</button>
+            </div>
+          </div>
+          <button class="btn qr__reset" id="reset-options" type="button">Reset to defaults</button>
+        </details>
+      </section>
+
+      <!-- ---------- Scan ---------- -->
+      <section class="card qr__panel" id="scanner" aria-labelledby="scan-title">
+        <h2 id="scan-title">Scan</h2>
+
+        <div class="qr__actions">
+          <button class="btn btn--primary" id="camera-start" type="button">Use camera</button>
+          <button class="btn" id="camera-stop" type="button" hidden>Stop camera</button>
+          <label class="btn">Choose image<input type="file" id="scan-file" accept="image/*" hidden></label>
+          <select class="select" id="camera-select" aria-label="Camera" hidden></select>
+          <button class="btn" id="torch" type="button" hidden>Torch</button>
+        </div>
+
+        <div class="qr__video" id="video-wrap" hidden>
+          <video id="video" playsinline muted></video>
+          <div class="qr__frame" aria-hidden="true"></div>
+        </div>
+
+        <p class="qr__drop muted" id="drop-hint">…or paste or drop an image here.</p>
+
+        <div class="qr__result" id="result" hidden>
+          <pre id="result-text"></pre>
+          <div class="qr__actions">
+            <button class="btn" id="result-copy" type="button">Copy</button>
+            <a class="btn" id="result-open" target="_blank" rel="noopener noreferrer" hidden>Open link</a>
+          </div>
+        </div>
+
+        <p class="qr__status muted" id="scan-status" role="status"></p>
+      </section>
+    </div>
+  </main>
+
+  <site-footer></site-footer>
+
+  <script src="vendor/easy.qrcode.min.js"></script>
+  <script src="vendor/jsQR.js"></script>
+  <script src="qr.js"></script>
+</body>
+</html>
