@@ -14,7 +14,7 @@ window.TOOLS = [
     name: "Pomodoro",
     desc: "Focus and break cycles to keep work moving.",
     icon: '<circle cx="12" cy="14" r="7"/><path d="M12 7c0-2 1-3.5 3-4M9 5.5c1.2 0 2.4.6 3 1.5.6-.9 1.8-1.5 3-1.5"/>',
-    status: "soon",
+    status: "live",
   },
   {
     slug: "qr",

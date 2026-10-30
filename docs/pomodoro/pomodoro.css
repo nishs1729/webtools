@@ -1,0 +1,238 @@
+.pomo {
+  --mode: var(--danger); /* tomato red for focus */
+  display: grid;
+  gap: 16px;
+  max-width: 440px;
+  margin: 0 auto;
+}
+
+.pomo[data-mode="short"] {
+  --mode: var(--success);
+}
+
+.pomo[data-mode="long"] {
+  --mode: var(--accent);
+}
+
+.pomo .intro {
+  margin-bottom: 8px;
+}
+
+/* ---------- Timer card ---------- */
+
+.pomo__timer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.pomo__modes {
+  display: flex;
+  gap: 4px;
+  width: 100%;
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+
+.pomo__modes button {
+  flex: 1;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.pomo__modes button[aria-selected="true"] {
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 500;
+  box-shadow: var(--shadow);
+}
+
+.pomo__modes button:disabled {
+  cursor: default;
+}
+
+.pomo__modes button:disabled:not([aria-selected="true"]) {
+  opacity: 0.5;
+}
+
+.pomo__ring {
+  position: relative;
+  width: min(260px, 100%);
+  aspect-ratio: 1;
+  user-select: none;
+}
+
+/* While paused the ring can be dragged up/down to change the time. */
+.pomo:not(.is-running) .pomo__ring {
+  cursor: ns-resize;
+  touch-action: none;
+}
+
+.pomo__ring svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+  stroke-width: 8;
+}
+
+.pomo__track {
+  stroke: var(--surface-2);
+}
+
+.pomo__progress {
+  stroke: var(--mode);
+  stroke-dasharray: 628.32; /* 2π × 100 */
+  transition: stroke-dashoffset 0.3s linear, stroke 0.3s;
+}
+
+.pomo__readout {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 12px;
+}
+
+.pomo__time {
+  font-size: 3.5rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.pomo__dots {
+  display: flex;
+  gap: 6px;
+}
+
+.pomo__dots i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 1px var(--border);
+  transition: background 0.3s;
+}
+
+.pomo__dots i.is-done {
+  background: var(--mode);
+  box-shadow: none;
+}
+
+.pomo__controls {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.pomo__side {
+  width: 44px;
+  height: 44px;
+}
+
+.pomo__play {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--mode);
+  color: var(--accent-text);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  transition: background 0.3s, filter 0.15s;
+}
+
+.pomo__play:hover {
+  filter: brightness(1.08);
+}
+
+.pomo__play svg {
+  width: 26px;
+  height: 26px;
+  stroke-width: 2.25;
+}
+
+.pomo:not(.is-running) .pomo__play svg {
+  fill: currentColor;
+  margin-left: 3px; /* optically centre the triangle */
+}
+
+.pomo__today {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+/* ---------- Settings ---------- */
+
+.pomo__settings summary {
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.pomo__settings[open] summary {
+  margin-bottom: 16px;
+}
+
+.pomo__fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.pomo__fields label {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 4px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.pomo__fields .input {
+  width: 100%;
+  color: var(--text);
+}
+
+.pomo__checks {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+  font-size: 0.95rem;
+}
+
+.pomo__checks label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.pomo__checks input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+}
+
+.pomo__keys {
+  margin: 0;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+/* Keyboard hints are noise on touch screens. */
+@media (hover: none) {
+  .pomo__keys {
+    display: none;
+  }
+}

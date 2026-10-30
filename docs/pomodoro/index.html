@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pomodoro · Webtools</title>
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="pomodoro.css">
+  <script src="../assets/js/tools.js"></script>
+  <script src="../assets/js/site.js"></script>
+</head>
+<body>
+  <site-header tool="pomodoro"></site-header>
+
+  <main>
+    <div class="pomo" id="pomo">
+      <section class="intro">
+        <h1>Pomodoro</h1>
+        <p class="muted">Focus in short sessions, with breaks in between.</p>
+      </section>
+
+      <div class="card pomo__timer">
+        <div class="pomo__modes" role="tablist" aria-label="Session">
+          <button type="button" role="tab" data-mode="focus">Focus</button>
+          <button type="button" role="tab" data-mode="short">Short break</button>
+          <button type="button" role="tab" data-mode="long">Long break</button>
+        </div>
+
+        <div class="pomo__ring" id="ring">
+          <svg viewBox="0 0 220 220" aria-hidden="true">
+            <circle class="pomo__track" cx="110" cy="110" r="100"/>
+            <circle class="pomo__progress" id="progress" cx="110" cy="110" r="100"/>
+          </svg>
+          <div class="pomo__readout">
+            <div class="pomo__time" id="time" role="timer">25:00</div>
+            <div class="pomo__dots" id="dots" aria-hidden="true"></div>
+          </div>
+        </div>
+
+        <div class="pomo__controls">
+          <button class="icon-btn pomo__side" id="reset" type="button" title="Reset (R)" aria-label="Reset">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+          </button>
+          <button class="pomo__play" id="play" type="button"></button>
+          <button class="icon-btn pomo__side" id="skip" type="button" title="Skip to next session (S)" aria-label="Skip to next session">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5l10 7-10 7z"/><path d="M19 5v14"/></svg>
+          </button>
+        </div>
+
+        <p class="pomo__today muted" id="today"></p>
+      </div>
+
+      <details class="card pomo__settings">
+        <summary>Settings</summary>
+        <div class="pomo__fields">
+          <label>Focus (min)
+            <input class="input" type="number" name="focus" min="1" max="120" step="1" inputmode="numeric">
+          </label>
+          <label>Short break (min)
+            <input class="input" type="number" name="short" min="1" max="60" step="1" inputmode="numeric">
+          </label>
+          <label>Long break (min)
+            <input class="input" type="number" name="long" min="1" max="120" step="1" inputmode="numeric">
+          </label>
+          <label>Rounds before long break
+            <input class="input" type="number" name="cycles" min="1" max="10" step="1" inputmode="numeric">
+          </label>
+        </div>
+        <div class="pomo__checks">
+          <label><input type="checkbox" name="sound"> Chime when a session ends</label>
+          <label><input type="checkbox" name="notify"> Browser notification when a session ends</label>
+          <label><input type="checkbox" name="autostart"> Start the next session automatically</label>
+        </div>
+      </details>
+
+      <p class="pomo__keys muted">
+        <kbd>Space</kbd> start/pause · <kbd>R</kbd> reset · <kbd>S</kbd> skip ·
+        <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> session · scroll on the timer to adjust it
+      </p>
+    </div>
+  </main>
+
+  <site-footer></site-footer>
+
+  <script src="pomodoro.js"></script>
+</body>
+</html>

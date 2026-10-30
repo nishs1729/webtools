@@ -292,9 +292,22 @@ textarea {
   border-color: var(--accent);
 }
 
-input[type="range"] {
+input[type="range"],
+input[type="checkbox"] {
   accent-color: var(--accent);
   cursor: pointer;
+}
+
+kbd {
+  display: inline-block;
+  min-width: 1.6em;
+  padding: 1px 5px;
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background: var(--surface);
+  font: 0.85em var(--mono);
+  text-align: center;
 }
 
 :focus-visible {
