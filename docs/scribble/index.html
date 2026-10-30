@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scribble Pad · Webtools</title>
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="scribble.css">
+  <script src="../assets/js/tools.js"></script>
+  <script src="../assets/js/site.js"></script>
+</head>
+<body>
+  <site-header tool="scribble"></site-header>
+
+  <main>
+    <section class="intro">
+      <h1>Scribble Pad</h1>
+      <p class="muted">A quick canvas for sketches and notes. Your drawing is kept until you clear it.</p>
+    </section>
+
+    <div class="card scribble__bar" role="toolbar" aria-label="Drawing tools">
+      <div class="scribble__tools" role="group" aria-label="Tool">
+        <button type="button" data-tool="pen" title="Pen (B)" aria-label="Pen">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg>
+        </button>
+        <button type="button" data-tool="eraser" title="Eraser (E)" aria-label="Eraser">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 20h12M5.4 13.6l6.2-6.2a2 2 0 0 1 2.8 0l3.2 3.2a2 2 0 0 1 0 2.8L12 19H8.4l-3-3a1.7 1.7 0 0 1 0-2.4z"/><path d="M9 10l5 5"/></svg>
+        </button>
+      </div>
+
+      <div class="scribble__swatches" id="swatches" role="group" aria-label="Colour">
+        <label class="scribble__swatch scribble__custom" title="Pick any colour">
+          <input type="color" id="custom-color" aria-label="Custom colour">
+        </label>
+      </div>
+
+      <label class="scribble__range" title="Brush size ([ and ])">
+        Size <input type="range" id="size" min="1" max="60"> <output id="size-out"></output>
+      </label>
+      <label class="scribble__range">
+        Opacity <input type="range" id="opacity" min="0.1" max="1" step="0.05"> <output id="opacity-out"></output>
+      </label>
+
+      <div class="scribble__history">
+        <button class="icon-btn" id="undo" type="button" title="Undo (Ctrl+Z)" aria-label="Undo">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+        </button>
+        <button class="icon-btn" id="redo" type="button" title="Redo (Ctrl+Shift+Z)" aria-label="Redo">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="scribble__canvas" id="wrap">
+      <canvas id="canvas"></canvas>
+    </div>
+
+    <div class="scribble__footer">
+      <label class="scribble__bg">Background <input type="color" id="bg"></label>
+      <label class="scribble__check"><input type="checkbox" id="transparent"> Transparent</label>
+      <label class="scribble__check"><input type="checkbox" id="grid"> Grid</label>
+      <span class="scribble__spacer"></span>
+      <button class="btn btn--danger" id="clear" type="button">Clear</button>
+      <select class="select" id="format" aria-label="Image format">
+        <option value="image/png">PNG</option>
+        <option value="image/jpeg">JPEG</option>
+        <option value="image/webp">WebP</option>
+      </select>
+      <button class="btn btn--primary" id="download" type="button">Download</button>
+    </div>
+  </main>
+
+  <site-footer></site-footer>
+
+  <script src="scribble.js"></script>
+</body>
+</html>

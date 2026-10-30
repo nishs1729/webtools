@@ -1,0 +1,191 @@
+/* ---------- Toolbar ---------- */
+
+.scribble__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 18px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+
+.scribble__tools {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+
+.scribble__tools button {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 32px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.scribble__tools button[aria-pressed="true"] {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow);
+}
+
+.scribble__swatches {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.scribble__swatch {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--swatch);
+  box-shadow: 0 0 0 1px rgb(128 128 128 / 0.45); /* keeps dark swatches visible in dark mode */
+  cursor: pointer;
+}
+
+.scribble__swatch[aria-pressed="true"] {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* The custom colour input, shown as a rainbow swatch. */
+.scribble__custom {
+  overflow: hidden;
+  background: conic-gradient(#f44, #fd4, #4d4, #4dd, #44f, #d4d, #f44);
+}
+
+.scribble__custom input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.scribble__range {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.scribble__range input {
+  width: 96px;
+}
+
+.scribble__range output {
+  min-width: 3.2em;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.scribble__history {
+  display: flex;
+  gap: 2px;
+  margin-left: auto;
+}
+
+.scribble__history .icon-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+  background: none;
+}
+
+/* ---------- Canvas ---------- */
+
+.scribble__canvas {
+  --paper: #ffffff;
+  position: relative;
+  height: clamp(360px, calc(100dvh - 330px), 900px);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background-color: var(--paper);
+  box-shadow: var(--shadow);
+}
+
+.scribble__canvas.is-transparent {
+  background: repeating-conic-gradient(#e6e6e6 0 25%, #ffffff 0 50%) 0 0 / 20px 20px;
+}
+
+.scribble__canvas.has-grid::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to right, rgb(128 128 128 / 0.18) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(128 128 128 / 0.18) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.scribble__canvas canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+/* ---------- Below the canvas ---------- */
+
+.scribble__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  margin-top: 12px;
+  font-size: 0.9rem;
+}
+
+.scribble__bg,
+.scribble__check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.scribble__bg input {
+  width: 32px;
+  height: 28px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  cursor: pointer;
+}
+
+.scribble__check input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+.scribble__spacer {
+  flex: 1;
+}
+
+@media (max-width: 600px) {
+  .scribble__canvas {
+    height: clamp(320px, calc(100dvh - 380px), 700px);
+  }
+
+  .scribble__range input {
+    width: 72px;
+  }
+
+  .scribble__spacer {
+    flex-basis: 100%;
+  }
+}
