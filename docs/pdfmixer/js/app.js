@@ -91,8 +91,6 @@ async function addFiles(list) {
 
 const capitalise = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
-$("add").innerHTML = `${icon("plus")} Add PDFs`;
-$("add").addEventListener("click", () => fileInput.click());
 $("add-empty").addEventListener("click", () => fileInput.click());
 fileInput.addEventListener("change", () => {
   addFiles(fileInput.files);
