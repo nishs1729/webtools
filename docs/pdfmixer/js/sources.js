@@ -1,6 +1,6 @@
 /*
  * Left column: one block per loaded PDF, its pages stacked vertically.
- * Click a page to pick it; drag it into the result or output list to insert it at a spot.
+ * Click a page to pick it; drag it into the preview to insert it at a spot.
  * Rendering only — app.js handles clicks.
  */
 
@@ -52,7 +52,7 @@ export function renderFile(file) {
 
   const list = section.querySelector(".pm-src__pages");
   list.querySelectorAll("canvas").forEach((c) => lazy.observe(c));
-  // Pages can be dragged out (copied) into the result or output list, never reordered here.
+  // Pages can be dragged out (copied) into the preview, never reordered here.
   Sortable.create(list, {
     ...DRAG,
     group: { name: "pages", pull: "clone", put: false },

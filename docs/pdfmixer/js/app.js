@@ -2,22 +2,20 @@
  * PDF Mixer: pick pages from several PDFs, order them, save one PDF.
  * Everything runs in the browser; files are never uploaded.
  *
- * Layout: sources (left) → result (centre) → output list and save (right).
- * On narrow screens the three columns become tabs.
+ * Layout: sources (left) → preview of the new PDF, with reorder and save (right).
+ * On narrow screens the two columns become tabs.
  *
  *   state.js    files + output queue (the source of truth for selection)
  *   pdf.js      PDF.js open/render, thumbnail cache, pdf-lib export
  *   sources.js  left column: source PDFs, pages stacked
- *   result.js   centre column: the output as a grid or as full pages
- *   queue.js    right column: compact output list
+ *   result.js   preview column: the output as a grid or as full pages
  *   preview.js  large page preview dialog
  */
 
 import * as state from "./state.js";
 import { openPdf, closeFile, buildPdf } from "./pdf.js";
 import { renderFile, syncFile, parseRange } from "./sources.js";
-import { initResult, renderResult, setView, highlight } from "./result.js";
-import { initQueue, renderQueue } from "./queue.js";
+import { initResult, renderResult, setView } from "./result.js";
 import { openPreview } from "./preview.js";
 import { icon, esc, plural, toast } from "./ui.js";
 
@@ -25,9 +23,9 @@ const $ = (id) => document.getElementById(id);
 const pmEl = $("pm");
 const sourcesEl = $("sources");
 const resultEl = $("result");
-const queueEl = $("queue");
 const fileInput = $("file-input");
 const createBtn = $("create");
+const clearResultBtn = $("clear-result");
 const filenameEl = $("filename");
 const progressEl = $("progress");
 const STORE_KEY = "webtools-pdfmixer";
@@ -37,20 +35,20 @@ let exporting = false;
 /** Redraw everything that depends on the selection. */
 function refresh(focus) {
   for (const f of state.files) syncFile(f.id);
-  renderResult();
-  renderQueue(focus);
+  renderResult(focus);
 
   const files = state.files.length;
   const pages = state.queue.length;
   $("stats").textContent = files ? `${plural(files, "PDF")} · ${plural(pages, "page")} picked` : "";
   $("result-count").textContent = pages ? plural(pages, "page") : "";
-  $("queue-count").textContent = pages ? plural(pages, "page") : "";
   document.querySelector('[data-tab="result"] [data-badge]').textContent = pages || "";
   $("result-empty").hidden = pages > 0;
-  $("queue-empty").hidden = pages > 0;
   $("empty").hidden = files > 0;
+  $("add-more").hidden = files === 0;
   $("clear-all").hidden = files === 0;
   createBtn.disabled = pages === 0 || exporting;
+  clearResultBtn.disabled = pages === 0 || exporting;
+  filenameEl.placeholder = defaultName();
   fitHeight();
 }
 
@@ -92,6 +90,7 @@ async function addFiles(list) {
 const capitalise = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
 $("add-empty").addEventListener("click", () => fileInput.click());
+$("add-more").addEventListener("click", () => fileInput.click());
 fileInput.addEventListener("change", () => {
   addFiles(fileInput.files);
   fileInput.value = "";
@@ -172,7 +171,7 @@ sourcesEl.addEventListener("click", (e) => {
     }
     case "remove": {
       const picked = state.selectedPages(file.id).size;
-      if (picked && !confirm(`Remove “${file.name}”? Its ${plural(picked, "page")} will leave the output too.`)) return;
+      if (picked && !confirm(`Remove “${file.name}”? Its ${plural(picked, "page")} will leave the preview too.`)) return;
       state.removeFile(file.id);
       closeFile(file);
       section.remove();
@@ -214,25 +213,30 @@ sourcesEl.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && e.target.matches(".pm-src__range")) applyRange(e.target);
 });
 
-/* ---------- Centre and right: the output ---------- */
+/* ---------- Right: the preview ---------- */
 
-// Both the result and the output list can be reordered, and both accept pages dragged from the left.
-const dragHandlers = {
+// Pages are reordered by dragging, and pages dragged in from the left are inserted where dropped.
+initResult({
   onMove: (from, to) => state.moveEntry(from, to) && refresh(),
   onInsert: (fileId, page, index) => {
     state.insertAt(fileId, page, index);
     refresh();
   },
-};
-initResult(dragHandlers);
-initQueue(dragHandlers);
+});
 
-// Buttons on result pages and output rows do the same things.
 function onEntryAction(action, qid) {
   const i = state.queue.findIndex((entry) => entry.qid === qid);
   if (i === -1) return;
   if (action === "up") state.moveEntry(i, i - 1);
   if (action === "down") state.moveEntry(i, i + 1);
+  if (action === "move-to") {
+    const n = state.queue.length;
+    const answer = prompt(`Move page ${i + 1} to position (1–${n}):`, i + 1);
+    if (answer === null) return;
+    const to = Number.parseInt(answer, 10);
+    if (!(to >= 1 && to <= n)) return toast(`Enter a number from 1 to ${n}.`, "error");
+    state.moveEntry(i, to - 1);
+  }
   if (action === "duplicate") state.duplicateEntry(qid);
   if (action === "remove") state.removeEntry(qid);
   if (action === "preview") return openPreview(queuePages(), i);
@@ -248,12 +252,11 @@ resultEl.addEventListener("dblclick", (e) => {
   if (li && !e.target.closest("button")) onEntryAction("preview", Number(li.dataset.qid));
 });
 
-queueEl.addEventListener("click", (e) => {
-  const card = e.target.closest(".pm-q");
-  if (!card) return;
-  const btn = e.target.closest("[data-action]");
-  if (btn) onEntryAction(btn.dataset.action, Number(card.dataset.qid));
-  else highlight(Number(card.dataset.qid)); // clicking a row finds that page in the result
+clearResultBtn.addEventListener("click", () => {
+  const n = state.queue.length;
+  if (n > 1 && !confirm(`Remove all ${n} pages from the preview? Your source PDFs stay loaded.`)) return;
+  state.clearQueue();
+  refresh();
 });
 
 // Grid or full-page view of the result, remembered between visits.
@@ -283,13 +286,20 @@ for (const tab of tabs) {
 
 /* ---------- Creating the PDF ---------- */
 
+// Named after the first page's source, e.g. "report.pdf" → "report-mixed".
+function defaultName() {
+  const first = state.queue[0] && state.getFile(state.queue[0].fileId);
+  return first ? `${first.name.replace(/\.pdf$/i, "")}-mixed` : "combined";
+}
+
 async function createPdf() {
   if (!state.queue.length || exporting) return;
-  const name = (filenameEl.value.trim().replace(/\.pdf$/i, "") || "combined").replace(/[\\/:*?"<>|]+/g, "-");
+  const name = (filenameEl.value.trim().replace(/\.pdf$/i, "") || defaultName()).replace(/[\\/:*?"<>|]+/g, "-");
   const count = state.queue.length;
 
   exporting = true;
   createBtn.disabled = true;
+  clearResultBtn.disabled = true;
   progressEl.hidden = false;
   const setProgress = (done, total) => {
     progressEl.firstElementChild.style.width = `${(done / total) * 100}%`;

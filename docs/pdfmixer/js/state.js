@@ -68,6 +68,10 @@ export function removeFile(id) {
   removeWhere((e) => e.fileId === id);
 }
 
+export function clearQueue() {
+  queue.length = 0;
+}
+
 export function clearAll() {
   files.length = 0;
   queue.length = 0;

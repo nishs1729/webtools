@@ -1,6 +1,7 @@
 /*
- * Centre column: the output as it will be saved — a grid of pages, or one large
- * page per row ("reader"). Items are reused across renders (keyed by queue id),
+ * Preview column: the new PDF as it will be saved — a grid of pages, or one large
+ * page per row ("reader"). Pages are reordered here by dragging or with the
+ * move buttons. Items are reused across renders (keyed by queue id),
  * so rendered pages survive reordering. Rendering only — app.js handles clicks.
  */
 
@@ -98,8 +99,11 @@ export function setView(next) {
   }
 }
 
-/** Bring the list in line with the queue, reusing existing items. */
-export function renderResult() {
+/**
+ * Bring the list in line with the queue, reusing existing items.
+ * focus: { qid, action } to put keyboard focus back on a button after a change.
+ */
+export function renderResult(focus) {
   const live = new Set(queue.map((e) => e.qid));
   for (const [qid, li] of items) {
     if (live.has(qid)) continue;
@@ -108,6 +112,7 @@ export function renderResult() {
     items.delete(qid);
   }
 
+  const last = queue.length - 1;
   queue.forEach((entry, i) => {
     let li = items.get(entry.qid);
     if (!li) {
@@ -115,12 +120,27 @@ export function renderResult() {
       items.set(entry.qid, li);
     }
     li.querySelector(".pm-res__pos").textContent = i + 1;
+    li.querySelector('[data-action="up"]').disabled = i === 0;
+    li.querySelector('[data-action="down"]').disabled = i === last;
     if (listEl.children[i] !== li) listEl.insertBefore(li, listEl.children[i] ?? null);
     if (!li.dataset.observed) {
       li.dataset.observed = "1";
       lazy.observe(li);
     }
   });
+
+  if (focus) restoreFocus(focus);
+}
+
+// Moving an item in the DOM drops focus, so put it back on the same button
+// (or a neighbour's, if that page was removed).
+function restoreFocus({ qid, action }) {
+  const li = items.get(qid);
+  const btn = li?.querySelector(`[data-action="${action}"]`);
+  if (btn && !btn.disabled) return btn.focus();
+  const target = li ?? listEl.querySelector(".pm-res");
+  target?.querySelector(".pm-res__tools button:not(:disabled)")?.focus();
+  target?.scrollIntoView({ block: "nearest" });
 }
 
 function createItem(entry) {
@@ -131,29 +151,15 @@ function createItem(entry) {
   li.innerHTML = `
     <div class="pm-res__page"></div>
     <div class="pm-res__bar">
-      <span class="pm-res__pos"></span>
+      <button class="pm-res__pos" type="button" data-action="move-to" title="Move to position…" aria-label="Move to position"></button>
       <span class="pm-res__src" title="${esc(name)}, page ${entry.page}">p.${entry.page} · ${esc(name)}</span>
     </div>
     <div class="pm-res__tools">
+      <button class="icon-btn" type="button" data-action="up" title="Move earlier" aria-label="Move earlier">${icon("left")}</button>
+      <button class="icon-btn" type="button" data-action="down" title="Move later" aria-label="Move later">${icon("right")}</button>
       <button class="icon-btn" type="button" data-action="duplicate" title="Add this page again" aria-label="Duplicate page">${icon("copy")}</button>
       <button class="icon-btn" type="button" data-action="preview" title="Preview" aria-label="Preview page">${icon("zoom")}</button>
       <button class="icon-btn" type="button" data-action="remove" title="Remove" aria-label="Remove page">${icon("x")}</button>
     </div>`;
   return li;
-}
-
-/** Scroll a page into view and flash it (used when clicking it in the output list). */
-export function highlight(qid) {
-  const li = items.get(qid);
-  if (!li) return;
-  // Scroll only the result column when it scrolls on its own (wide screens), not the whole page.
-  const body = listEl.parentElement;
-  if (body.scrollHeight > body.clientHeight) {
-    body.scrollTo({ top: li.offsetTop - (body.clientHeight - li.offsetHeight) / 2, behavior: "smooth" });
-  } else {
-    li.scrollIntoView({ block: "center", behavior: "smooth" });
-  }
-  li.classList.remove("is-flash");
-  void li.offsetWidth; // restart the animation
-  li.classList.add("is-flash");
 }
