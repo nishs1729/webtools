@@ -10,9 +10,22 @@ const ICONS = {
   down: '<path d="M12 5v14M19 12l-7 7-7-7"/>',
   copy: '<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/>',
   grip: '<path d="M9 6h.01M9 12h.01M9 18h.01M15 6h.01M15 12h.01M15 18h.01"/>',
+  grid: '<rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/>',
+  reader: '<rect x="6" y="2" width="12" height="9" rx="1"/><rect x="6" y="13" width="12" height="9" rx="1"/>',
 };
 
 export const icon = (name) => Site.svg(ICONS[name]);
+
+// Shared SortableJS options. The fallback (pointer-based) drag works the same with mouse and touch;
+// on touch a short press starts a drag, so plain swipes still scroll.
+export const DRAG = {
+  animation: 150,
+  forceFallback: true,
+  fallbackTolerance: 4,
+  delay: 180,
+  delayOnTouchOnly: true,
+  ghostClass: "is-ghost",
+};
 
 export const esc = (s) =>
   String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);

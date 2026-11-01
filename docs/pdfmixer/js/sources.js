@@ -1,12 +1,16 @@
-/* The source PDFs: one card per file with a grid of page thumbnails. Rendering only — app.js handles clicks. */
+/*
+ * Left column: one block per loaded PDF, its pages stacked vertically.
+ * Click a page to pick it; drag it into the result or output list to insert it at a spot.
+ * Rendering only — app.js handles clicks.
+ */
 
 import { getFile, selectedPages } from "./state.js";
 import { drawThumbnail } from "./pdf.js";
-import { icon, esc, plural } from "./ui.js";
+import { icon, esc, plural, DRAG } from "./ui.js";
 
-const workspaceEl = document.getElementById("workspace");
+const sourcesEl = document.getElementById("sources");
 
-// Thumbnails are rendered when they come near the viewport.
+// Thumbnails are rendered when they come near the visible part of the column.
 const lazy = new IntersectionObserver(
   (entries) => {
     for (const entry of entries) {
@@ -14,46 +18,56 @@ const lazy = new IntersectionObserver(
       lazy.unobserve(entry.target);
       const canvas = entry.target;
       const thumb = canvas.closest(".pm-thumb");
-      const file = getFile(Number(canvas.dataset.fileId));
+      const file = getFile(Number(thumb.dataset.fileId));
       if (!file) continue;
       drawThumbnail(file, Number(thumb.dataset.page), canvas)
         .then(() => thumb.classList.add("is-ready"))
         .catch(() => thumb.classList.add("is-failed"));
     }
   },
-  { rootMargin: "400px" }
+  { rootMargin: "600px" }
 );
 
 export function renderFile(file) {
   const section = document.createElement("section");
-  section.className = "card pm-file";
+  section.className = "pm-src";
   section.dataset.fileId = file.id;
   section.innerHTML = `
-    <header class="pm-file__head">
-      <button class="icon-btn pm-file__collapse" type="button" data-action="collapse" aria-expanded="true" aria-label="Hide pages">${icon("chevron")}</button>
-      <div class="pm-file__title">
+    <header class="pm-src__head">
+      <button class="icon-btn pm-src__collapse" type="button" data-action="collapse" aria-expanded="true" aria-label="Hide pages">${icon("chevron")}</button>
+      <div class="pm-src__title">
         <h2 title="${esc(file.name)}">${esc(file.name)}</h2>
         <p class="muted">${plural(file.pageCount, "page")} · <span data-count>none picked</span></p>
       </div>
-      <div class="pm-file__actions">
-        <button class="btn btn--sm" type="button" data-action="all">All</button>
-        <button class="btn btn--sm" type="button" data-action="none">None</button>
-        <input class="input pm-file__range" type="text" placeholder="e.g. 1-3, 7" title="Pick pages by number, then press Enter" aria-label="Pick pages by number" spellcheck="false" autocomplete="off">
-        <button class="icon-btn" type="button" data-action="remove" title="Remove this PDF" aria-label="Remove ${esc(file.name)}">${icon("x")}</button>
-      </div>
+      <button class="icon-btn" type="button" data-action="remove" title="Remove this PDF" aria-label="Remove ${esc(file.name)}">${icon("x")}</button>
     </header>
-    <p class="pm-file__error" role="alert" hidden></p>
-    <ul class="pm-thumbs">${Array.from({ length: file.pageCount }, (_, i) => thumbHtml(file, i + 1)).join("")}</ul>`;
-  workspaceEl.append(section);
-  section.querySelectorAll("canvas").forEach((c) => lazy.observe(c));
+    <div class="pm-src__tools">
+      <button class="btn btn--sm" type="button" data-action="all">All</button>
+      <button class="btn btn--sm" type="button" data-action="none">None</button>
+      <input class="input pm-src__range" type="text" placeholder="1-3, 7" title="Pick pages by number, then press Enter" aria-label="Pick pages by number" spellcheck="false" autocomplete="off">
+    </div>
+    <p class="pm-src__error" role="alert" hidden></p>
+    <ol class="pm-src__pages">${Array.from({ length: file.pageCount }, (_, i) => thumbHtml(file, i + 1)).join("")}</ol>`;
+  sourcesEl.append(section);
+
+  const list = section.querySelector(".pm-src__pages");
+  list.querySelectorAll("canvas").forEach((c) => lazy.observe(c));
+  // Pages can be dragged out (copied) into the result or output list, never reordered here.
+  Sortable.create(list, {
+    ...DRAG,
+    group: { name: "pages", pull: "clone", put: false },
+    sort: false,
+    filter: ".pm-thumb__zoom",
+    preventOnFilter: false,
+  });
   return section;
 }
 
 function thumbHtml(file, page) {
   return `
-    <li class="pm-thumb" data-page="${page}">
+    <li class="pm-thumb" data-file-id="${file.id}" data-page="${page}">
       <button class="pm-thumb__pick" type="button" data-action="toggle" aria-pressed="false" aria-label="Page ${page}">
-        <span class="pm-thumb__img"><canvas data-file-id="${file.id}"></canvas></span>
+        <span class="pm-thumb__img"><canvas></canvas></span>
         <span class="pm-thumb__num">${page}</span>
       </button>
       <span class="pm-thumb__check" aria-hidden="true">${icon("check")}</span>
@@ -61,9 +75,9 @@ function thumbHtml(file, page) {
     </li>`;
 }
 
-/** Bring a file card's selection marks and count in line with the queue. */
+/** Bring a file block's selection marks and count in line with the queue. */
 export function syncFile(fileId) {
-  const section = workspaceEl.querySelector(`.pm-file[data-file-id="${fileId}"]`);
+  const section = sourcesEl.querySelector(`.pm-src[data-file-id="${fileId}"]`);
   if (!section) return;
   const picked = selectedPages(fileId);
   for (const thumb of section.querySelectorAll(".pm-thumb")) {

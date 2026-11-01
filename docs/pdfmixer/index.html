@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="pdfmixer.css">
   <script src="../assets/js/tools.js"></script>
   <script src="../assets/js/site.js"></script>
-  <!-- PDF.js 3.11.174 (render), pdf-lib 1.17.1 (build), SortableJS 1.15.0 (drag to reorder) -->
+  <!-- PDF.js 3.11.174 (render), pdf-lib 1.17.1 (build), SortableJS 1.15.0 (drag and drop) -->
   <script src="vendor/pdf.min.js"></script>
   <script src="vendor/pdf-lib.min.js"></script>
   <script src="vendor/Sortable.min.js"></script>
@@ -19,42 +19,59 @@
   <site-header tool="pdfmixer"></site-header>
 
   <main>
-    <section class="intro">
+    <section class="intro pm-intro">
       <h1>PDF Mixer</h1>
-      <p class="muted">Pick pages from one or more PDFs, put them in any order and save them as a new PDF. Your files never leave this computer.</p>
+      <p class="muted">Pick pages from one or more PDFs, arrange them and save a new PDF. Your files never leave this computer.</p>
     </section>
 
-    <div class="pm">
-      <!-- ---------- Source PDFs ---------- -->
-      <section class="pm__work" aria-label="Source PDFs">
-        <div class="pm__toolbar">
-          <button class="btn btn--primary" id="add" type="button"></button>
-          <span class="pm__stats muted" id="stats"></span>
-          <a class="btn pm__jump" href="#output" id="jump" hidden>Output</a>
-          <button class="btn" id="clear-all" type="button" hidden>Clear all</button>
-        </div>
+    <div class="pm__toolbar">
+      <button class="btn btn--primary" id="add" type="button"></button>
+      <span class="pm__stats muted" id="stats"></span>
+      <button class="btn" id="clear-all" type="button" hidden>Clear all</button>
+    </div>
 
-        <div class="pm__files" id="workspace"></div>
+    <!-- Narrow screens show one column at a time. -->
+    <nav class="pm-tabs" role="tablist" aria-label="Sections">
+      <button type="button" role="tab" data-tab="sources" aria-selected="true">Sources</button>
+      <button type="button" role="tab" data-tab="result" aria-selected="false">Result <span data-badge></span></button>
+      <button type="button" role="tab" data-tab="output" aria-selected="false">Save</button>
+    </nav>
 
+    <div class="pm" id="pm" data-tab="sources">
+      <!-- ---------- Left: source PDFs ---------- -->
+      <section class="pm__col pm__sources" data-panel="sources" aria-label="Source PDFs">
+        <div class="pm__files" id="sources"></div>
         <div class="pm__empty" id="empty">
           <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="10" height="14" rx="1.5"/><rect x="10" y="7" width="10" height="14" rx="1.5"/></svg>
           <p><strong>Drop PDFs here</strong> or <button class="pm__link" id="add-empty" type="button">choose files</button>.</p>
-          <p class="muted">Click pages to pick them. Double-click a page, or use its magnifier, to see it larger.</p>
         </div>
-
         <input type="file" id="file-input" accept=".pdf,application/pdf" multiple hidden>
       </section>
 
-      <!-- ---------- Output queue ---------- -->
-      <aside class="card pm__queue" id="output" aria-labelledby="output-title">
-        <header class="pm__queue-head">
+      <!-- ---------- Centre: the result ---------- -->
+      <section class="pm__col pm__result" data-panel="result" aria-labelledby="result-title">
+        <header class="pm__col-head">
+          <h2 id="result-title">Result</h2>
+          <span class="muted" id="result-count"></span>
+          <div class="pm-view" role="group" aria-label="View">
+            <button type="button" data-view="grid" title="Grid" aria-label="Grid view"></button>
+            <button type="button" data-view="reader" title="Pages" aria-label="Page view"></button>
+          </div>
+        </header>
+        <div class="pm__result-body">
+          <p class="pm__hint muted" id="result-empty">Click pages on the left to add them here, or drag them to an exact spot.</p>
+          <ol class="pm-res-list is-grid" id="result"></ol>
+        </div>
+      </section>
+
+      <!-- ---------- Right: output list and save ---------- -->
+      <aside class="pm__col pm__output" id="output" data-panel="output" aria-labelledby="output-title">
+        <header class="pm__col-head">
           <h2 id="output-title">Output</h2>
           <span class="muted" id="queue-count"></span>
         </header>
-
-        <p class="pm__queue-empty muted" id="queue-empty">Pages you pick appear here, in the order they’ll be saved. Drag them to reorder.</p>
+        <p class="pm__hint muted" id="queue-empty">Pages in the order they’ll be saved. Drag to reorder.</p>
         <ol class="pm__list" id="queue"></ol>
-
         <div class="pm__export">
           <label class="pm__filename">
             <input class="input" id="filename" value="combined" spellcheck="false" autocomplete="off" aria-label="File name">

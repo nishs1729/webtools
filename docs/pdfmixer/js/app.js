@@ -2,45 +2,63 @@
  * PDF Mixer: pick pages from several PDFs, order them, save one PDF.
  * Everything runs in the browser; files are never uploaded.
  *
- *   state.js      files + output queue (the source of truth for selection)
- *   pdf.js        PDF.js open/render, thumbnail cache, pdf-lib export
- *   workspace.js  source PDF cards and thumbnails
- *   queue.js      output list with drag-to-reorder
- *   preview.js    large page preview dialog
+ * Layout: sources (left) → result (centre) → output list and save (right).
+ * On narrow screens the three columns become tabs.
+ *
+ *   state.js    files + output queue (the source of truth for selection)
+ *   pdf.js      PDF.js open/render, thumbnail cache, pdf-lib export
+ *   sources.js  left column: source PDFs, pages stacked
+ *   result.js   centre column: the output as a grid or as full pages
+ *   queue.js    right column: compact output list
+ *   preview.js  large page preview dialog
  */
 
 import * as state from "./state.js";
 import { openPdf, closeFile, buildPdf } from "./pdf.js";
-import { renderFile, syncFile, parseRange } from "./workspace.js";
+import { renderFile, syncFile, parseRange } from "./sources.js";
+import { initResult, renderResult, setView, highlight } from "./result.js";
 import { initQueue, renderQueue } from "./queue.js";
 import { openPreview } from "./preview.js";
 import { icon, esc, plural, toast } from "./ui.js";
 
 const $ = (id) => document.getElementById(id);
-const workspaceEl = $("workspace");
+const pmEl = $("pm");
+const sourcesEl = $("sources");
+const resultEl = $("result");
 const queueEl = $("queue");
 const fileInput = $("file-input");
 const createBtn = $("create");
 const filenameEl = $("filename");
 const progressEl = $("progress");
+const STORE_KEY = "webtools-pdfmixer";
 
 let exporting = false;
 
 /** Redraw everything that depends on the selection. */
 function refresh(focus) {
   for (const f of state.files) syncFile(f.id);
+  renderResult();
   renderQueue(focus);
 
   const files = state.files.length;
   const pages = state.queue.length;
   $("stats").textContent = files ? `${plural(files, "PDF")} · ${plural(pages, "page")} picked` : "";
+  $("result-count").textContent = pages ? plural(pages, "page") : "";
   $("queue-count").textContent = pages ? plural(pages, "page") : "";
+  document.querySelector('[data-tab="result"] [data-badge]').textContent = pages || "";
+  $("result-empty").hidden = pages > 0;
   $("queue-empty").hidden = pages > 0;
   $("empty").hidden = files > 0;
   $("clear-all").hidden = files === 0;
-  $("jump").hidden = pages === 0;
   createBtn.disabled = pages === 0 || exporting;
+  fitHeight();
 }
+
+// On wide screens the columns fill the rest of the window and scroll on their own.
+function fitHeight() {
+  pmEl.style.setProperty("--pm-top", `${pmEl.getBoundingClientRect().top + window.scrollY}px`);
+}
+window.addEventListener("resize", fitHeight);
 
 /* ---------- Adding files ---------- */
 
@@ -56,7 +74,7 @@ async function addFiles(list) {
     const loading = document.createElement("p");
     loading.className = "pm-loading muted";
     loading.innerHTML = `Opening <strong>${esc(file.name)}</strong>…`;
-    workspaceEl.append(loading);
+    sourcesEl.append(loading);
     try {
       const doc = await openPdf(file);
       renderFile(state.addFile({ name: file.name, file, doc, pageCount: doc.numPages }));
@@ -81,7 +99,7 @@ fileInput.addEventListener("change", () => {
   fileInput.value = "";
 });
 
-// Drag and drop anywhere on the page.
+// Dropping files anywhere on the page adds them. (Dragging pages between columns isn't a file drag.)
 let dragDepth = 0;
 const hasFiles = (e) => [...e.dataTransfer.types].includes("Files");
 document.addEventListener("dragenter", (e) => {
@@ -108,20 +126,21 @@ $("clear-all").addEventListener("click", () => {
   if (!confirm("Remove all PDFs and start over?")) return;
   state.files.forEach(closeFile);
   state.clearAll();
-  workspaceEl.replaceChildren();
+  sourcesEl.replaceChildren();
   refresh();
 });
 
-/* ---------- Picking pages ---------- */
+/* ---------- Left: picking pages ---------- */
 
 const allPages = (file) => Array.from({ length: file.pageCount }, (_, i) => i + 1);
 const pagesOf = (file) => allPages(file).map((page) => ({ fileId: file.id, page }));
+const queuePages = () => state.queue.map(({ fileId, page }) => ({ fileId, page }));
 let lastPick = null; // { fileId, page } for shift-click ranges
 
-workspaceEl.addEventListener("click", (e) => {
+sourcesEl.addEventListener("click", (e) => {
   const btn = e.target.closest("[data-action]");
   if (!btn) return;
-  const section = btn.closest(".pm-file");
+  const section = btn.closest(".pm-src");
   const file = state.getFile(Number(section.dataset.fileId));
   const page = Number(btn.closest(".pm-thumb")?.dataset.page);
 
@@ -165,18 +184,17 @@ workspaceEl.addEventListener("click", (e) => {
   refresh();
 });
 
-workspaceEl.addEventListener("dblclick", (e) => {
+sourcesEl.addEventListener("dblclick", (e) => {
   const thumb = e.target.closest(".pm-thumb");
   if (!thumb) return;
-  const file = state.getFile(Number(thumb.closest(".pm-file").dataset.fileId));
-  openPreview(pagesOf(file), Number(thumb.dataset.page) - 1);
+  openPreview(pagesOf(state.getFile(Number(thumb.dataset.fileId))), Number(thumb.dataset.page) - 1);
 });
 
 // Typing a range ("1-3, 7") picks exactly those pages of that file.
 function applyRange(input) {
-  const section = input.closest(".pm-file");
+  const section = input.closest(".pm-src");
   const file = state.getFile(Number(section.dataset.fileId));
-  const errorEl = section.querySelector(".pm-file__error");
+  const errorEl = section.querySelector(".pm-src__error");
   const text = input.value.trim();
   const { pages, error } = text ? parseRange(text, file.pageCount) : { pages: null };
 
@@ -191,31 +209,79 @@ function applyRange(input) {
   refresh();
 }
 
-workspaceEl.addEventListener("change", (e) => {
-  if (e.target.matches(".pm-file__range")) applyRange(e.target);
+sourcesEl.addEventListener("change", (e) => {
+  if (e.target.matches(".pm-src__range")) applyRange(e.target);
 });
-workspaceEl.addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && e.target.matches(".pm-file__range")) applyRange(e.target);
+sourcesEl.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && e.target.matches(".pm-src__range")) applyRange(e.target);
 });
 
-/* ---------- Output queue ---------- */
+/* ---------- Centre and right: the output ---------- */
 
-initQueue(() => refresh());
+// Both the result and the output list can be reordered, and both accept pages dragged from the left.
+const dragHandlers = {
+  onMove: (from, to) => state.moveEntry(from, to) && refresh(),
+  onInsert: (fileId, page, index) => {
+    state.insertAt(fileId, page, index);
+    refresh();
+  },
+};
+initResult(dragHandlers);
+initQueue(dragHandlers);
 
-queueEl.addEventListener("click", (e) => {
-  const btn = e.target.closest("[data-action]");
-  if (!btn) return;
-  const qid = Number(btn.closest(".pm-q").dataset.qid);
+// Buttons on result pages and output rows do the same things.
+function onEntryAction(action, qid) {
   const i = state.queue.findIndex((entry) => entry.qid === qid);
-  const { action } = btn.dataset;
-
+  if (i === -1) return;
   if (action === "up") state.moveEntry(i, i - 1);
   if (action === "down") state.moveEntry(i, i + 1);
   if (action === "duplicate") state.duplicateEntry(qid);
   if (action === "remove") state.removeEntry(qid);
-  if (action === "preview") return openPreview(state.queue.map(({ fileId, page }) => ({ fileId, page })), i);
+  if (action === "preview") return openPreview(queuePages(), i);
   refresh({ qid, action });
+}
+
+resultEl.addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-action]");
+  if (btn) onEntryAction(btn.dataset.action, Number(btn.closest(".pm-res").dataset.qid));
 });
+resultEl.addEventListener("dblclick", (e) => {
+  const li = e.target.closest(".pm-res");
+  if (li && !e.target.closest("button")) onEntryAction("preview", Number(li.dataset.qid));
+});
+
+queueEl.addEventListener("click", (e) => {
+  const card = e.target.closest(".pm-q");
+  if (!card) return;
+  const btn = e.target.closest("[data-action]");
+  if (btn) onEntryAction(btn.dataset.action, Number(card.dataset.qid));
+  else highlight(Number(card.dataset.qid)); // clicking a row finds that page in the result
+});
+
+// Grid or full-page view of the result, remembered between visits.
+const viewBtns = [...document.querySelectorAll("[data-view]")];
+function chooseView(view) {
+  setView(view);
+  for (const b of viewBtns) b.setAttribute("aria-pressed", b.dataset.view === view);
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify({ view }));
+  } catch {}
+}
+for (const b of viewBtns) {
+  b.innerHTML = icon(b.dataset.view);
+  b.addEventListener("click", () => chooseView(b.dataset.view));
+}
+
+// Tabs (narrow screens only)
+const tabs = [...document.querySelectorAll("[data-tab]")].filter((el) => el.matches("button"));
+for (const tab of tabs) {
+  tab.addEventListener("click", () => {
+    pmEl.dataset.tab = tab.dataset.tab;
+    for (const t of tabs) t.setAttribute("aria-selected", t === tab);
+    // Pages in a column that was hidden couldn't be measured; draw them now.
+    if (tab.dataset.tab === "result") setView(document.querySelector('[data-view][aria-pressed="true"]').dataset.view);
+  });
+}
 
 /* ---------- Creating the PDF ---------- */
 
@@ -269,4 +335,14 @@ window.addEventListener("beforeunload", (e) => {
   if (state.files.length) e.preventDefault();
 });
 
+/* ---------- Init ---------- */
+
+const saved = (() => {
+  try {
+    return JSON.parse(localStorage.getItem(STORE_KEY)) || {};
+  } catch {
+    return {};
+  }
+})();
+chooseView(saved.view === "reader" ? "reader" : "grid");
 refresh();

@@ -1,17 +1,23 @@
-/* The output queue panel. Rendering and drag-to-reorder — app.js handles button clicks. */
+/* Right column: the output as a compact list. Rendering and drag-to-reorder — app.js handles clicks. */
 
-import { queue, getFile, moveEntry } from "./state.js";
+import { queue, getFile } from "./state.js";
 import { drawThumbnail } from "./pdf.js";
-import { icon, esc } from "./ui.js";
+import { icon, esc, DRAG } from "./ui.js";
 
 const listEl = document.getElementById("queue");
 
-export function initQueue(onReorder) {
+export function initQueue({ onMove, onInsert }) {
   Sortable.create(listEl, {
+    ...DRAG,
+    group: { name: "pages", pull: false, put: true },
     handle: ".pm-q__handle",
-    animation: 150,
-    ghostClass: "is-ghost",
-    onEnd: (e) => moveEntry(e.oldIndex, e.newIndex) && onReorder(),
+    onEnd: (e) => e.from === e.to && onMove(e.oldIndex, e.newIndex),
+    onAdd: (e) => {
+      // A page dragged in from a source PDF: put the original back and insert a queue entry instead.
+      const { fileId, page } = e.item.dataset;
+      e.clone.replaceWith(e.item);
+      onInsert(Number(fileId), Number(page), e.newIndex);
+    },
   });
 }
 
@@ -40,9 +46,9 @@ function cardHtml(entry, i) {
       <span class="pm-q__handle" title="Drag to reorder" aria-hidden="true">${icon("grip")}</span>
       <span class="pm-q__pos">${i + 1}</span>
       <canvas class="pm-q__thumb"></canvas>
-      <span class="pm-q__meta">
+      <span class="pm-q__meta" title="Show in result">
         <strong>Page ${entry.page}</strong>
-        <span title="${esc(name)}">${esc(name)}</span>
+        <span>${esc(name)}</span>
       </span>
       <span class="pm-q__btns">
         <button class="icon-btn" type="button" data-action="up" title="Move up" aria-label="Move up"${i === 0 ? " disabled" : ""}>${icon("up")}</button>

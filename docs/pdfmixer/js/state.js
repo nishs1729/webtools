@@ -34,6 +34,11 @@ export function select(fileId, pages) {
   }
 }
 
+// Put a page at a given position (dragged in), even if it's already in the queue.
+export function insertAt(fileId, page, index) {
+  queue.splice(Math.max(0, Math.min(index, queue.length)), 0, { qid: newId(), fileId, page });
+}
+
 // Remove every queue entry (duplicates included) for these pages.
 export function deselect(fileId, pages) {
   const drop = new Set(pages);
