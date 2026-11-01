@@ -37,4 +37,11 @@ window.TOOLS = [
     icon: '<path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4zM13.5 6.5l4 4"/>',
     status: "live",
   },
+  {
+    slug: "pdfmixer",
+    name: "PDF Mixer",
+    desc: "Pick pages from several PDFs, reorder them, save as one.",
+    icon: '<rect x="4" y="3" width="10" height="14" rx="1.5"/><rect x="10" y="7" width="10" height="14" rx="1.5"/>',
+    status: "live",
+  },
 ];

@@ -234,6 +234,8 @@ textarea {
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--surface);
+  color: var(--text);
+  text-decoration: none; /* also used on links */
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
 }
@@ -255,6 +257,11 @@ textarea {
 
 .btn--danger {
   color: var(--danger);
+}
+
+.btn--sm {
+  padding: 4px 10px;
+  font-size: 0.85rem;
 }
 
 .btn:disabled {

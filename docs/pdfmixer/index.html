@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PDF Mixer · Webtools</title>
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="pdfmixer.css">
+  <script src="../assets/js/tools.js"></script>
+  <script src="../assets/js/site.js"></script>
+  <!-- PDF.js 3.11.174 (render), pdf-lib 1.17.1 (build), SortableJS 1.15.0 (drag to reorder) -->
+  <script src="vendor/pdf.min.js"></script>
+  <script src="vendor/pdf-lib.min.js"></script>
+  <script src="vendor/Sortable.min.js"></script>
+  <script type="module" src="js/app.js"></script>
+</head>
+<body>
+  <site-header tool="pdfmixer"></site-header>
+
+  <main>
+    <section class="intro">
+      <h1>PDF Mixer</h1>
+      <p class="muted">Pick pages from one or more PDFs, put them in any order and save them as a new PDF. Your files never leave this computer.</p>
+    </section>
+
+    <div class="pm">
+      <!-- ---------- Source PDFs ---------- -->
+      <section class="pm__work" aria-label="Source PDFs">
+        <div class="pm__toolbar">
+          <button class="btn btn--primary" id="add" type="button"></button>
+          <span class="pm__stats muted" id="stats"></span>
+          <a class="btn pm__jump" href="#output" id="jump" hidden>Output</a>
+          <button class="btn" id="clear-all" type="button" hidden>Clear all</button>
+        </div>
+
+        <div class="pm__files" id="workspace"></div>
+
+        <div class="pm__empty" id="empty">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="10" height="14" rx="1.5"/><rect x="10" y="7" width="10" height="14" rx="1.5"/></svg>
+          <p><strong>Drop PDFs here</strong> or <button class="pm__link" id="add-empty" type="button">choose files</button>.</p>
+          <p class="muted">Click pages to pick them. Double-click a page, or use its magnifier, to see it larger.</p>
+        </div>
+
+        <input type="file" id="file-input" accept=".pdf,application/pdf" multiple hidden>
+      </section>
+
+      <!-- ---------- Output queue ---------- -->
+      <aside class="card pm__queue" id="output" aria-labelledby="output-title">
+        <header class="pm__queue-head">
+          <h2 id="output-title">Output</h2>
+          <span class="muted" id="queue-count"></span>
+        </header>
+
+        <p class="pm__queue-empty muted" id="queue-empty">Pages you pick appear here, in the order they’ll be saved. Drag them to reorder.</p>
+        <ol class="pm__list" id="queue"></ol>
+
+        <div class="pm__export">
+          <label class="pm__filename">
+            <input class="input" id="filename" value="combined" spellcheck="false" autocomplete="off" aria-label="File name">
+            <span>.pdf</span>
+          </label>
+          <button class="btn btn--primary" id="create" type="button" disabled>Create PDF</button>
+          <div class="pm__progress" id="progress" hidden><div></div></div>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <site-footer></site-footer>
+
+  <dialog class="pm-preview" id="preview" aria-labelledby="preview-title">
+    <header class="pm-preview__head">
+      <span id="preview-title"></span>
+      <button class="icon-btn" id="preview-close" type="button" aria-label="Close preview"></button>
+    </header>
+    <div class="pm-preview__page" id="preview-page"></div>
+    <footer class="pm-preview__nav">
+      <button class="btn" id="preview-prev" type="button">← Previous</button>
+      <span class="muted" id="preview-pos"></span>
+      <button class="btn" id="preview-next" type="button">Next →</button>
+    </footer>
+  </dialog>
+
+  <div class="pm-drop" id="drop" hidden><span>Drop PDFs to add them</span></div>
+  <div class="pm-toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
