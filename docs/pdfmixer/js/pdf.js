@@ -68,6 +68,24 @@ export function closeFile(file) {
 
 /* ---------- Building the output ---------- */
 
+// Open each source once with pdf-lib. A source it can't read (encrypted, mostly)
+// maps to null, and its pages are rendered to images instead.
+async function loadSources(entries, getFile) {
+  const { PDFDocument } = PDFLib;
+  const sources = new Map();
+  const rasterized = [];
+  for (const fileId of new Set(entries.map((e) => e.fileId))) {
+    const file = getFile(fileId);
+    try {
+      sources.set(fileId, await PDFDocument.load(await file.file.arrayBuffer(), { updateMetadata: false }));
+    } catch {
+      sources.set(fileId, null);
+      rasterized.push(file.name);
+    }
+  }
+  return { sources, rasterized };
+}
+
 /**
  * Build a PDF from queue entries ({ fileId, page }) in order.
  * Pages are copied as-is (text, vectors, size and rotation kept). If pdf-lib can't
@@ -75,23 +93,14 @@ export function closeFile(file) {
  * Returns { bytes, rasterized: [file names] }.
  */
 export async function buildPdf(entries, getFile, onProgress) {
-  const { PDFDocument } = PDFLib;
-  const out = await PDFDocument.create();
+  const out = await PDFLib.PDFDocument.create();
   const parts = new Array(entries.length); // per entry: a copied page, or { image, width, height }
-  const rasterized = [];
+  const { sources, rasterized } = await loadSources(entries, getFile);
   let done = 0;
 
-  for (const fileId of new Set(entries.map((e) => e.fileId))) {
+  for (const [fileId, src] of sources) {
     const file = getFile(fileId);
     const positions = entries.flatMap((e, i) => (e.fileId === fileId ? [i] : []));
-
-    let src = null;
-    try {
-      src = await PDFDocument.load(await file.file.arrayBuffer(), { updateMetadata: false });
-    } catch {
-      rasterized.push(file.name);
-    }
-
     if (src) {
       // copyPages returns a separate copy per index, so duplicates are fine.
       const copied = await out.copyPages(src, positions.map((i) => entries[i].page - 1));
@@ -106,15 +115,33 @@ export async function buildPdf(entries, getFile, onProgress) {
     }
   }
 
-  for (const part of parts) {
-    if (part.image) {
-      out.addPage([part.width, part.height]).drawImage(part.image, { x: 0, y: 0, width: part.width, height: part.height });
-    } else {
-      out.addPage(part);
-    }
-  }
-
+  parts.forEach((part) => addPart(out, part));
   return { bytes: await out.save(), rasterized };
+}
+
+/**
+ * One single-page PDF per queue entry, in order.
+ * Returns { files: [bytes], rasterized: [file names] }.
+ */
+export async function burstPdf(entries, getFile, onProgress) {
+  const { sources, rasterized } = await loadSources(entries, getFile);
+  const files = [];
+  for (const [i, { fileId, page }] of entries.entries()) {
+    const out = await PDFLib.PDFDocument.create();
+    const src = sources.get(fileId);
+    addPart(out, src ? (await out.copyPages(src, [page - 1]))[0] : await rasterPage(out, getFile(fileId).doc, page));
+    files.push(await out.save());
+    onProgress(i + 1, entries.length);
+  }
+  return { files, rasterized };
+}
+
+function addPart(out, part) {
+  if (part.image) {
+    out.addPage([part.width, part.height]).drawImage(part.image, { x: 0, y: 0, width: part.width, height: part.height });
+  } else {
+    out.addPage(part);
+  }
 }
 
 // Render a page at 2× (144 dpi) and embed it as a JPEG of the same page size.

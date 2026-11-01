@@ -560,7 +560,7 @@
 
 .pm__export {
   display: grid;
-  grid-template-columns: minmax(0, 340px) 1fr auto;
+  grid-template-columns: minmax(0, 340px) 1fr auto auto;
   gap: 8px;
   padding: 12px 14px;
   border-top: 1px solid var(--border);
@@ -709,7 +709,7 @@
 
 @media (max-width: 520px) {
   .pm__export {
-    grid-template-columns: 1fr auto;
+    grid-template-columns: 1fr auto auto;
   }
 
   .pm__filename {

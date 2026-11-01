@@ -9,11 +9,13 @@
  *   pdf.js      PDF.js open/render, thumbnail cache, pdf-lib export
  *   sources.js  left column: source PDFs, pages stacked
  *   result.js   preview column: the output as a grid or as full pages
+ *   zip.js      bundles burst pages into one download
  *   preview.js  large page preview dialog
  */
 
 import * as state from "./state.js";
-import { openPdf, closeFile, buildPdf } from "./pdf.js";
+import { openPdf, closeFile, buildPdf, burstPdf } from "./pdf.js";
+import { makeZip } from "./zip.js";
 import { renderFile, syncFile, parseRange } from "./sources.js";
 import { initResult, renderResult, setView } from "./result.js";
 import { openPreview } from "./preview.js";
@@ -26,6 +28,7 @@ const resultEl = $("result");
 const fileInput = $("file-input");
 const createBtn = $("create");
 const clearResultBtn = $("clear-result");
+const burstBtn = $("burst");
 const filenameEl = $("filename");
 const progressEl = $("progress");
 const STORE_KEY = "webtools-pdfmixer";
@@ -48,6 +51,7 @@ function refresh(focus) {
   $("clear-all").hidden = files === 0;
   createBtn.disabled = pages === 0 || exporting;
   clearResultBtn.disabled = pages === 0 || exporting;
+  burstBtn.disabled = pages === 0 || exporting;
   filenameEl.placeholder = defaultName();
   fitHeight();
 }
@@ -292,42 +296,63 @@ function defaultName() {
   return first ? `${first.name.replace(/\.pdf$/i, "")}-mixed` : "combined";
 }
 
-async function createPdf() {
-  if (!state.queue.length || exporting) return;
-  const name = (filenameEl.value.trim().replace(/\.pdf$/i, "") || defaultName()).replace(/[\\/:*?"<>|]+/g, "-");
-  const count = state.queue.length;
+const outputName = () => (filenameEl.value.trim().replace(/\.pdf$/i, "") || defaultName()).replace(/[\\/:*?"<>|]+/g, "-");
 
+// Run one export with the save bar locked and a progress bar on the button pressed.
+async function runExport(btn, busyLabel, work) {
+  if (!state.queue.length || exporting) return;
+  const label = btn.textContent;
   exporting = true;
-  createBtn.disabled = true;
-  clearResultBtn.disabled = true;
+  for (const b of [createBtn, burstBtn, clearResultBtn]) b.disabled = true;
   progressEl.hidden = false;
   const setProgress = (done, total) => {
     progressEl.firstElementChild.style.width = `${(done / total) * 100}%`;
-    createBtn.textContent = `Creating… ${done}/${total}`;
+    btn.textContent = `${busyLabel} ${done}/${total}`;
   };
-  setProgress(0, count);
+  setProgress(0, state.queue.length);
 
   try {
-    const { bytes, rasterized } = await buildPdf([...state.queue], state.getFile, setProgress);
-    download(bytes, `${name}.pdf`);
-    if (rasterized.length) {
-      toast(`Saved ${name}.pdf. Pages from ${rasterized.join(", ")} are protected, so they were saved as images (text isn’t selectable).`, "warn");
-    } else {
-      toast(`Saved ${name}.pdf (${plural(count, "page")}).`);
-    }
+    await work(setProgress);
   } catch (err) {
     console.error(err);
     toast(`Couldn’t create the PDF: ${err.message || "something went wrong"}.`, "error");
   } finally {
     exporting = false;
     progressEl.hidden = true;
-    createBtn.textContent = "Create PDF";
+    btn.textContent = label;
     refresh();
   }
 }
 
-function download(bytes, filename) {
-  const url = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
+const protectedNote = (rasterized) =>
+  `Pages from ${rasterized.join(", ")} are protected, so they were saved as images (text isn’t selectable).`;
+
+function createPdf() {
+  return runExport(createBtn, "Creating…", async (setProgress) => {
+    const name = outputName();
+    const count = state.queue.length;
+    const { bytes, rasterized } = await buildPdf([...state.queue], state.getFile, setProgress);
+    download(new Blob([bytes], { type: "application/pdf" }), `${name}.pdf`);
+    if (rasterized.length) toast(`Saved ${name}.pdf. ${protectedNote(rasterized)}`, "warn");
+    else toast(`Saved ${name}.pdf (${plural(count, "page")}).`);
+  });
+}
+
+// Every page in the preview as its own PDF (name_01.pdf, name_02.pdf, …), zipped.
+function burst() {
+  return runExport(burstBtn, "Splitting…", async (setProgress) => {
+    const name = outputName();
+    const { files, rasterized } = await burstPdf([...state.queue], state.getFile, setProgress);
+    const width = String(files.length).length; // pad so the files sort in page order
+    const zip = makeZip(files.map((bytes, i) => ({ name: `${name}_${String(i + 1).padStart(width, "0")}.pdf`, bytes })));
+    download(zip, `${name}.zip`);
+    if (rasterized.length) toast(`Saved ${name}.zip. ${protectedNote(rasterized)}`, "warn");
+    else toast(`Saved ${name}.zip (${plural(files.length, "PDF")}).`);
+  });
+}
+
+function download(blob, filename) {
+  const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
   a.download = filename;
@@ -336,6 +361,7 @@ function download(bytes, filename) {
 }
 
 createBtn.addEventListener("click", createPdf);
+burstBtn.addEventListener("click", burst);
 filenameEl.addEventListener("keydown", (e) => e.key === "Enter" && createPdf());
 
 // Loaded files live only in this tab, so warn before leaving with work in progress.
