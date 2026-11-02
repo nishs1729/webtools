@@ -93,11 +93,23 @@
 
   /* ---------- <site-footer> ---------- */
 
+  const REPO = "https://github.com/nishs1729/webtools";
+  const ARROW = '<path d="M7 17 17 7M8 7h9v9"/>';
+
   class SiteFooter extends HTMLElement {
     connectedCallback() {
+      // The current tool comes from the header, so pages only set it once.
+      const slug = document.querySelector("site-header")?.getAttribute("tool");
+      const others = slug ? (window.TOOLS || []).filter((t) => t.status === "live" && t.slug !== slug) : [];
+      const source = slug ? `${REPO}/tree/main/docs/${slug}` : REPO;
+
       this.innerHTML = `
         <div class="site-footer__inner">
-          <span>Small tools, made for myself.</span>
+          ${others.length ? `<nav class="site-footer__tools" aria-label="Other tools">
+            ${others.map((t) => `<a href="${toolUrl(t.slug)}">${t.name}</a>`).join('<span aria-hidden="true">·</span>')}
+          </nav>` : ""}
+          <span>Runs in your browser. Nothing is uploaded.</span>
+          <a class="site-footer__source" href="${source}" target="_blank" rel="noopener">Source ${svg(ARROW)}</a>
         </div>`;
     }
   }

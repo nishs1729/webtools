@@ -211,8 +211,36 @@ site-footer {
   margin: 0 auto;
   padding: 18px var(--gutter);
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px 12px;
+}
+
+.site-footer__inner a {
+  color: inherit;
+  text-underline-offset: 3px;
+}
+
+.site-footer__inner a:hover {
+  color: var(--text);
+}
+
+.site-footer__tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  flex-basis: 100%;
+}
+
+.site-footer__source {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.site-footer__source svg {
+  width: 14px;
+  height: 14px;
 }
 
 /* ---------- Controls ---------- */
